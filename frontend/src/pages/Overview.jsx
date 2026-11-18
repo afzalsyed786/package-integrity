@@ -86,7 +86,7 @@ export default function Overview() {
                     </linearGradient>
                   </defs>
                   <CartesianGrid stroke="#1E2C47" strokeDasharray="3 3" vertical={false} />
-                  <XAxis dataKey="label" tick={TICK_SMALL} interval={0} angle={-12} height={40} />
+                  <XAxis dataKey="label" tick={TICK_SMALL} interval="preserveStartEnd" angle={-12} height={40} />
                   <YAxis domain={RISK_DOMAIN} tick={TICK_DIM} />
                   <Tooltip contentStyle={tooltipStyle} />
                   <Area type="monotone" dataKey="risk" stroke="#F97316" strokeWidth={2} fill="url(#risk)" />

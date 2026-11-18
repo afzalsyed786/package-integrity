@@ -28,7 +28,7 @@ const VerdictHero = ({ a }) => {
           <span className="text-slate-500">{a.ecosystem}:</span>{a.package}<span className="text-sky-300">@{a.version}</span>
         </h1>
         <ul data-testid="verdict-reasons" className="mt-3 space-y-1 text-sm text-slate-300">
-          {a.verdict_reasons.map((r) => <li key={r} className="flex gap-2"><span style={{ color: st.color }}>▸</span>{r}</li>)}
+          {a.verdict_reasons.map((r, i) => <li key={`${i}:${r}`} className="flex gap-2"><span style={{ color: st.color }}>▸</span>{r}</li>)}
         </ul>
         {a.metadata?.synthetic && <div className="mt-3 text-xs text-fuchsia-200/80">{a.metadata.description}</div>}
       </div>

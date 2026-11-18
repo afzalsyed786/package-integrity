@@ -63,7 +63,7 @@ def score(findings: list[Finding], records, source, errors: list[str]) -> dict:
     reasons = []
     if strong or risk >= SUSPICIOUS_THRESHOLD:
         verdict = "Suspicious"
-        reasons += [f"{f.severity.upper()}: {f.title}" + (f" in {f.file}" if f.file else "") for f in strong[:6]]
+        reasons += list(dict.fromkeys(f"{f.severity.upper()}: {f.title}" + (f" in {f.file}" if f.file else "") + (f":{f.line}" if f.line else "") for f in strong))[:6]
         if risk >= SUSPICIOUS_THRESHOLD:
             reasons.append(f"Aggregate risk {risk} ≥ {SUSPICIOUS_THRESHOLD}")
     else:
