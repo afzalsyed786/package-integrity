@@ -29,7 +29,7 @@ export default function Provenance({ a }) {
         <Row k="registry commit (gitHead)" v={s.expected_commit} />
         <Row k="tag candidates tried" v={(s.candidates || []).join(", ")} />
         <Row k="closest tags" v={(s.nearby_tags || []).join(", ")} />
-        {(s.notes || []).map((n, i) => <div key={i} className="mt-2 text-xs text-amber-200/80">{n}</div>)}
+        {(s.notes || []).map((n) => <div key={n} className="mt-2 text-xs text-amber-200/80">{n}</div>)}
       </Panel>
       <Panel icon={Package} title="Published artifact">
         <Row k="file" v={art.filename} />
@@ -50,7 +50,7 @@ export default function Provenance({ a }) {
           <div className="mt-2 text-xs text-emerald-300">None — no traversal, links or special files.</div>
         ) : (
           a.archive.rejected.map((r, i) => (
-            <div key={i} data-testid={`rejected-entry-${i}`} className="mt-2 rounded-md border border-[#F5EFE6]/25 bg-[#070B14] p-3 font-mono text-xs">
+            <div key={`${r.kind}:${r.name}`} data-testid={`rejected-entry-${i}`} className="mt-2 rounded-md border border-[#F5EFE6]/25 bg-[#070B14] p-3 font-mono text-xs">
               <div className="flex items-center gap-2"><AnomalyPill>{r.kind.replace(/_/g, " ").toUpperCase()}</AnomalyPill></div>
               <div className="mt-2 text-[#F5EFE6]">{r.name}{r.target ? ` → ${r.target}` : ""}</div>
               <div className="mt-1 text-slate-500">{r.reason}</div>
@@ -62,8 +62,8 @@ export default function Provenance({ a }) {
         {(a.install_hooks || []).length === 0 ? (
           <div className="text-xs text-emerald-300">No install-time hooks declared by the package.</div>
         ) : (
-          a.install_hooks.map((h, i) => (
-            <div key={i} className="mb-2 rounded-md border border-[#1E2C47] bg-[#070B14] p-3 font-mono text-xs">
+          a.install_hooks.map((h) => (
+            <div key={`${h.kind}:${h.file}:${h.line}:${h.detail}`} className="mb-2 rounded-md border border-[#1E2C47] bg-[#070B14] p-3 font-mono text-xs">
               <div className="text-orange-300">{h.kind}</div>
               <div className="mt-1 text-slate-300">{h.detail}</div>
               <div className="mt-1 text-slate-500">{h.file}{h.line ? `:${h.line}` : ""}</div>

@@ -15,6 +15,8 @@ const Cell = ({ n, text, bg, flagged }) => (
   </>
 );
 
+const rowKey = (r) => `${r[0]}:${r[1] ?? "-"}:${r[3] ?? "-"}`;
+
 export default function DiffViewer({ analysisId, file, flaggedLines = [] }) {
   const { data, error, isLoading } = useSWR(file?.has_detail ? `/analyses/${analysisId}/files/${file.id}` : null, fetcher);
   if (!file) return null;
@@ -40,11 +42,11 @@ export default function DiffViewer({ analysisId, file, flaggedLines = [] }) {
         </thead>
         <tbody className="text-slate-300">
           {data.mode === "diff"
-            ? data.rows.map((r, i) =>
+            ? data.rows.map((r) =>
                 r[0] === "skip" ? (
-                  <tr key={i}><td colSpan={5} className="bg-[#0A1120] px-3 py-1 text-center text-[11px] text-slate-500">{r[2]}</td></tr>
+                  <tr key={`skip:${r[2]}:${rowKey(r)}`}><td colSpan={5} className="bg-[#0A1120] px-3 py-1 text-center text-[11px] text-slate-500">{r[2]}</td></tr>
                 ) : (
-                  <tr key={i}>
+                  <tr key={rowKey(r)}>
                     <Cell n={r[1]} text={r[2]} bg={(ROW_BG[r[0]] || [])[0]} flagged={flagged.has(r[1])} />
                     <td className="w-px border-l border-[#1E2C47]" />
                     <Cell n={r[3]} text={r[4]} bg={(ROW_BG[r[0]] || [])[1]} />
@@ -52,7 +54,7 @@ export default function DiffViewer({ analysisId, file, flaggedLines = [] }) {
                 ),
               )
             : data.lines.map((line, i) => (
-                <tr key={i}><Cell n={i + 1} text={line} bg={file.status === "package_only" ? "rgba(239,68,68,0.06)" : undefined} flagged={flagged.has(i + 1)} /></tr>
+                <tr key={`line-${i + 1}`}><Cell n={i + 1} text={line} bg={file.status === "package_only" ? "rgba(239,68,68,0.06)" : undefined} flagged={flagged.has(i + 1)} /></tr>
               ))}
         </tbody>
       </table>

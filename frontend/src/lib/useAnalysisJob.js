@@ -8,7 +8,10 @@ export function useAnalysisJob() {
   const timer = useRef(null);
   const navigate = useNavigate();
 
-  useEffect(() => () => clearInterval(timer.current), []);
+  useEffect(() => {
+    const ref = timer;
+    return () => clearInterval(ref.current);
+  }, []);
 
   const start = async (body) => {
     clearInterval(timer.current);

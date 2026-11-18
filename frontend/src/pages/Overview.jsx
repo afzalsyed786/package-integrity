@@ -9,6 +9,17 @@ import AnalyzeForm from "../components/pia/AnalyzeForm";
 import { Empty } from "../components/pia/Badges";
 
 const tooltipStyle = { background: "#121D33", border: "1px solid #2E436B", borderRadius: 8, fontSize: 12, color: "#F4F7FC" };
+const TICK_DIM = { fill: "#576B8E", fontSize: 11 };
+const TICK_LABEL = { fill: "#8EA0C0", fontSize: 11 };
+const TICK_SMALL = { fill: "#576B8E", fontSize: 10 };
+const CURSOR = { fill: "rgba(56,189,248,0.05)" };
+const RISK_MARGIN = { left: -20, right: 10 };
+const BAR_MARGIN = { left: -20 };
+const CAT_MARGIN = { left: 20 };
+const RISK_DOMAIN = [0, 100];
+const ROUNDED_TOP = [4, 4, 0, 0];
+const ROUNDED_RIGHT = [0, 4, 4, 0];
+const SEVERITIES = ["critical", "high", "medium", "low", "info"];
 
 const Stat = ({ icon: Icon, label, value, color = "#F4F7FC", testId, delay }) => (
   <div data-testid={testId} className="pia-card pia-card-hover fade-up p-6" style={{ animationDelay: `${delay}ms` }}>
@@ -31,7 +42,7 @@ export default function Overview() {
   const { data: s } = useSWR("/stats", fetcher, { refreshInterval: 10000 });
   if (!s) return <div className="text-slate-400">Loading…</div>;
   const verdictData = Object.entries(s.verdicts).map(([k, v]) => ({ name: k, value: v }));
-  const sevData = ["critical", "high", "medium", "low", "info"].map((k) => ({ name: k, value: s.severities[k] || 0 }));
+  const sevData = SEVERITIES.map((k) => ({ name: k, value: s.severities[k] || 0 }));
   const catData = Object.entries(s.categories).map(([k, v]) => ({ name: k, value: v })).sort((a, b) => b.value - a.value);
 
   return (
@@ -67,7 +78,7 @@ export default function Overview() {
             </ChartCard>
             <ChartCard title="Risk score by analysis" className="lg:col-span-8">
               <ResponsiveContainer>
-                <AreaChart data={s.risk_trend} margin={{ left: -20, right: 10 }}>
+                <AreaChart data={s.risk_trend} margin={RISK_MARGIN}>
                   <defs>
                     <linearGradient id="risk" x1="0" y1="0" x2="0" y2="1">
                       <stop offset="0%" stopColor="#F97316" stopOpacity={0.45} />
@@ -75,8 +86,8 @@ export default function Overview() {
                     </linearGradient>
                   </defs>
                   <CartesianGrid stroke="#1E2C47" strokeDasharray="3 3" vertical={false} />
-                  <XAxis dataKey="label" tick={{ fill: "#576B8E", fontSize: 10 }} interval={0} angle={-12} height={40} />
-                  <YAxis domain={[0, 100]} tick={{ fill: "#576B8E", fontSize: 11 }} />
+                  <XAxis dataKey="label" tick={TICK_SMALL} interval={0} angle={-12} height={40} />
+                  <YAxis domain={RISK_DOMAIN} tick={TICK_DIM} />
                   <Tooltip contentStyle={tooltipStyle} />
                   <Area type="monotone" dataKey="risk" stroke="#F97316" strokeWidth={2} fill="url(#risk)" />
                 </AreaChart>
@@ -84,21 +95,21 @@ export default function Overview() {
             </ChartCard>
             <ChartCard title="Findings by severity" className="lg:col-span-5">
               <ResponsiveContainer>
-                <BarChart data={sevData} margin={{ left: -20 }}>
-                  <XAxis dataKey="name" tick={{ fill: "#8EA0C0", fontSize: 11 }} />
-                  <YAxis tick={{ fill: "#576B8E", fontSize: 11 }} allowDecimals={false} />
-                  <Tooltip contentStyle={tooltipStyle} cursor={{ fill: "rgba(56,189,248,0.05)" }} />
-                  <Bar dataKey="value" radius={[4, 4, 0, 0]}>{sevData.map((d) => <Cell key={d.name} fill={SEVERITY_STYLE[d.name].color} />)}</Bar>
+                <BarChart data={sevData} margin={BAR_MARGIN}>
+                  <XAxis dataKey="name" tick={TICK_LABEL} />
+                  <YAxis tick={TICK_DIM} allowDecimals={false} />
+                  <Tooltip contentStyle={tooltipStyle} cursor={CURSOR} />
+                  <Bar dataKey="value" radius={ROUNDED_TOP}>{sevData.map((d) => <Cell key={d.name} fill={SEVERITY_STYLE[d.name].color} />)}</Bar>
                 </BarChart>
               </ResponsiveContainer>
             </ChartCard>
             <ChartCard title="Anomaly categories" className="lg:col-span-7">
               <ResponsiveContainer>
-                <BarChart data={catData} layout="vertical" margin={{ left: 20 }}>
-                  <XAxis type="number" tick={{ fill: "#576B8E", fontSize: 11 }} allowDecimals={false} />
-                  <YAxis type="category" dataKey="name" tick={{ fill: "#8EA0C0", fontSize: 11 }} width={90} interval={0} />
-                  <Tooltip contentStyle={tooltipStyle} cursor={{ fill: "rgba(56,189,248,0.05)" }} />
-                  <Bar dataKey="value" fill="#F5EFE6" radius={[0, 4, 4, 0]} />
+                <BarChart data={catData} layout="vertical" margin={CAT_MARGIN}>
+                  <XAxis type="number" tick={TICK_DIM} allowDecimals={false} />
+                  <YAxis type="category" dataKey="name" tick={TICK_LABEL} width={90} interval={0} />
+                  <Tooltip contentStyle={tooltipStyle} cursor={CURSOR} />
+                  <Bar dataKey="value" fill="#F5EFE6" radius={ROUNDED_RIGHT} />
                 </BarChart>
               </ResponsiveContainer>
             </ChartCard>

@@ -45,7 +45,7 @@ def side_by_side(pkg: str, repo: str) -> dict:
             n = i2 - i1
             idx = list(range(n)) if n <= 8 else list(range(3)) + [None] + list(range(n - 3, n))
             for k in idx:
-                rows.append(["skip", None, f"… {n - 6} identical lines …", None, ""] if k is None else ["equal", i1 + k + 1, a[i1 + k][:300], j1 + k + 1, b[j1 + k][:300]])
+                rows.append(["skip", i1 + 4, f"… {n - 6} identical lines …", j1 + 4, ""] if k is None else ["equal", i1 + k + 1, a[i1 + k][:300], j1 + k + 1, b[j1 + k][:300]])
         else:
             for x, y in zip_longest(range(i1, i2), range(j1, j2)):
                 kind = "changed" if x is not None and y is not None else ("pkg_only" if x is not None else "repo_only")
