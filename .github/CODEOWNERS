@@ -1,0 +1,8 @@
+/backend/pia/adapters/   @dev-a-engine
+/backend/pia/services/   @dev-a-engine
+/backend/pia/engine/     @dev-a-engine
+/backend/pia/detectors/  @dev-a-engine
+/backend/pia/app.py      @dev-b-product
+/backend/pia/pages/      @dev-b-product
+/backend/pia/cli.py      @dev-b-product
+/frontend/               @dev-b-product

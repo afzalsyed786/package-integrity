@@ -1,0 +1,16 @@
+{
+  "package": "left-trim-synth",
+  "version": "2.1.0",
+  "style": "npm",
+  "label": "SYNTHETIC — NOT REAL MALWARE",
+  "title": "Bundle injection, postinstall hook and hostile archive entries",
+  "description": "A fabricated npm tarball whose dist bundle has a valid source map for the original code but carries appended, unmapped code that posts NPM/GitHub tokens to a .invalid host. package.json gained a postinstall hook running a package-only script, and the archive contains a path-traversal entry and an escaping symlink (both rejected by the safe extractor).",
+  "techniques": ["unmapped bundle code", "postinstall hook", "token exfiltration", "path traversal entry", "symlink escape"],
+  "repository": "https://github.com/pia-synthetic/left-trim",
+  "tags": {"v2.0.0": "6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a", "v2.1.0": "7a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b"},
+  "bundles": [{"source": "src/index.js", "map_source": "../src/index.js", "inject": "build_inputs/injected.js.txt", "out": "dist/index.js"}],
+  "archive_injections": [
+    {"type": "traversal", "name": "../../.bashrc_pia_synthetic", "content": "echo 'synthetic traversal entry - never written'"},
+    {"type": "symlink", "name": "dist/credentials", "target": "/home/user/.npmrc"}
+  ]
+}

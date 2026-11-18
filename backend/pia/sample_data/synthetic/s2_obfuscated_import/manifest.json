@@ -1,0 +1,12 @@
+{
+  "package": "tinyhttp-synth",
+  "version": "0.9.1",
+  "style": "pypi",
+  "label": "SYNTHETIC — NOT REAL MALWARE",
+  "title": "Obfuscated import-time payload + sourceless bytecode",
+  "description": "A fabricated sdist where __init__.py imports a new obfuscated module that zlib/Base64-decodes a reverse-shell stub (TEST-NET address) and ships a .pyc with no source. The release tag is missing. A legitimate eval() and Base64 data URI from the repository are kept to demonstrate false-positive avoidance.",
+  "techniques": ["import-time execution", "chr() obfuscation", "zlib + base64 payload", "sourceless .pyc", "missing release tag"],
+  "repository": "https://github.com/pia-synthetic/tinyhttp",
+  "tags": {"v0.8.0": "4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e", "v0.9.0": "5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f"},
+  "compiled": [{"source": "build_inputs/cache_src.py.txt", "filename": "tinyhttp/_cache.py", "out": "tinyhttp/__pycache__/_cache.{tag}.pyc"}]
+}

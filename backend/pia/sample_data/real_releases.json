@@ -1,0 +1,5 @@
+[
+  {"ecosystem": "pypi", "name": "six", "version": "1.17.0", "note": "Real release: small, single-module sdist with a matching git tag"},
+  {"ecosystem": "pypi", "name": "idna", "version": "3.10", "note": "Real release: sdist built with flit, tag v3.10"},
+  {"ecosystem": "npm", "name": "ms", "version": "2.1.3", "note": "Real release: npm tarball with gitHead and matching tag"}
+]

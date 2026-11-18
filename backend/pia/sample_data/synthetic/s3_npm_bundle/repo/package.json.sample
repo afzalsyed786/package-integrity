@@ -1,0 +1,12 @@
+{
+  "name": "left-trim-synth",
+  "version": "2.1.0",
+  "description": "Remove leading whitespace (PIA synthetic demo)",
+  "main": "dist/index.js",
+  "files": ["dist"],
+  "scripts": {
+    "build": "esbuild src/index.js --bundle --sourcemap --platform=node --outfile=dist/index.js",
+    "test": "node test.js"
+  },
+  "license": "MIT"
+}

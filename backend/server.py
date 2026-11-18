@@ -1,116 +1,221 @@
-import asyncio
-from contextlib import suppress
-from fastapi import FastAPI, APIRouter, Query
-from dotenv import load_dotenv
-from starlette.middleware.cors import CORSMiddleware
-from motor.motor_asyncio import AsyncIOMotorClient
-from pymongo import ASCENDING, DESCENDING, IndexModel
-import os
+"""PIA HTTP API — thin layer over the pia engine (the same engine used by the CLI and Streamlit dashboard)."""
+import json
 import logging
-from pathlib import Path
-from pydantic import BaseModel, Field, ConfigDict
-from typing import List
+import os
+import threading
 import uuid
+from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timezone
+from pathlib import Path
 
+from dotenv import load_dotenv
+from fastapi import APIRouter, FastAPI, HTTPException, Query
+from pydantic import BaseModel, Field
+from starlette.middleware.cors import CORSMiddleware
 
 ROOT_DIR = Path(__file__).parent
-load_dotenv(ROOT_DIR / '.env')
+load_dotenv(ROOT_DIR / ".env")
 
-# MongoDB connection
-mongo_url = os.environ['MONGO_URL']
-client = AsyncIOMotorClient(mongo_url)
-db = client[os.environ['DB_NAME']]
+from pia.adapters import AnalysisInputError  # noqa: E402
+from pia.config import get_settings  # noqa: E402
+from pia.database.mongo_store import MongoStore  # noqa: E402
+from pia.detectors import default_detectors  # noqa: E402
+from pia.engine.analyzer import Analyzer  # noqa: E402
+from pia.services.explanation import ExplanationService  # noqa: E402
+from pia.services.watch import WatchService  # noqa: E402
 
-# One entry per collection: every field a route filters, sorts or dedupes on. Add the index in the same edit as the query.
-INDEXES: dict[str, list[IndexModel]] = {
-    "status_checks": [
-        IndexModel([("id", ASCENDING)], name="id", unique=True),
-        IndexModel([("timestamp", DESCENDING)], name="timestamp_desc"),
-    ],
-}
+logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s")
+log = logging.getLogger("pia.api")
 
+settings = get_settings()
+store = MongoStore(os.environ["MONGO_URL"], os.environ["DB_NAME"])
+analyzer = Analyzer(settings, store=store)
+explainer = ExplanationService(settings)
+watch = WatchService(store, analyzer)
+executor = ThreadPoolExecutor(max_workers=2, thread_name_prefix="pia-analysis")
+jobs: dict[str, dict] = {}
+stop_event = threading.Event()
 
-async def ensure_indexes() -> None:
-    for collection, models in INDEXES.items():
-        for model in models:  # one at a time so a bad spec skips only itself
-            try:
-                await db[collection].create_indexes([model])
-            except Exception as exc:  # never block boot on an index; the log line names what to fix
-                logging.getLogger(__name__).error("ensure_indexes(%s.%s): %s", collection, model.document["name"], exc)
-
-# Create the main app without a prefix
-app = FastAPI()
-
-# Create a router with the /api prefix
-api_router = APIRouter(prefix="/api")
+app = FastAPI(title="Package Integrity Analyzer API")
+api = APIRouter(prefix="/api")
 
 
-# Define Models
-class StatusCheck(BaseModel):
-    model_config = ConfigDict(extra="ignore")  # Ignore MongoDB's _id field
-    
-    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
-    client_name: str
-    timestamp: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+class AnalyzeRequest(BaseModel):
+    ecosystem: str = Field(pattern="^(pypi|npm|synthetic)$")
+    name: str = Field(min_length=1, max_length=214)
+    version: str | None = Field(default=None, max_length=100)
 
-class StatusCheckCreate(BaseModel):
-    client_name: str
 
-# Add your routes to the router instead of directly to app
-@api_router.get("/")
-async def root():
-    return {"message": "Hello World"}
+class WatchRequest(BaseModel):
+    ecosystem: str = Field(pattern="^(pypi|npm)$")
+    name: str = Field(min_length=1, max_length=214)
+    interval_minutes: int = Field(default=60, ge=5, le=1440)
 
-@api_router.post("/status", response_model=StatusCheck)
-async def create_status_check(input: StatusCheckCreate):
-    status_dict = input.model_dump()
-    status_obj = StatusCheck(**status_dict)
-    
-    # Convert to dict and serialize datetime to ISO string for MongoDB
-    doc = status_obj.model_dump()
-    doc['timestamp'] = doc['timestamp'].isoformat()
-    
-    _ = await db.status_checks.insert_one(doc)
-    return status_obj
 
-@api_router.get("/status", response_model=List[StatusCheck])
-async def get_status_checks(limit: int = Query(20, ge=1, le=100)):
-    # Exclude MongoDB's _id field from the query results
-    status_checks = await db.status_checks.find({}, {"_id": 0}).sort("timestamp", -1).limit(limit).to_list(limit)
-    
-    # Convert ISO string timestamps back to datetime objects
-    for check in status_checks:
-        if isinstance(check['timestamp'], str):
-            check['timestamp'] = datetime.fromisoformat(check['timestamp'])
-    
-    return status_checks
+def _run_job(job_id: str, req: AnalyzeRequest) -> None:
+    job = jobs[job_id]
 
-# Include the router in the main app
-app.include_router(api_router)
+    def progress(stage, pct, msg):
+        job.update(stage=stage, progress=pct, message=msg)
 
-app.add_middleware(
-    CORSMiddleware,
-    allow_credentials=True,
-    allow_origins=os.environ.get('CORS_ORIGINS', '*').split(','),
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
+    try:
+        result = analyzer.analyze(req.ecosystem, req.name, req.version, progress)
+        job.update(status="completed", analysis_id=result["id"], verdict=result["verdict"], progress=100)
+    except AnalysisInputError as e:
+        job.update(status="failed", error=str(e))
+    except Exception as e:  # surface unexpected engine failures to the client instead of hanging the job
+        log.exception("analysis failed")
+        job.update(status="failed", error=f"{type(e).__name__}: {e}")
 
-# Configure logging
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
-)
-logger = logging.getLogger(__name__)
+
+@api.get("/health")
+def health():
+    return {"status": "ok", "engine": "pia", "detectors": [d.id for d in default_detectors()], "ai": explainer.status()}
+
+
+@api.get("/ecosystems")
+def ecosystems():
+    return [{"id": k, "label": a.label} for k, a in analyzer.adapters.items()]
+
+
+@api.get("/samples")
+def samples():
+    real = json.loads((settings.samples_dir / "real_releases.json").read_text())
+    return {"synthetic": analyzer.adapters["synthetic"].samples(), "real": real}
+
+
+@api.post("/analyses")
+def start_analysis(req: AnalyzeRequest):
+    job_id = uuid.uuid4().hex[:12]
+    jobs[job_id] = {"id": job_id, "status": "running", "stage": "queued", "progress": 0, "message": "Queued",
+                    "request": req.model_dump(), "created_at": datetime.now(timezone.utc).isoformat()}
+    executor.submit(_run_job, job_id, req)
+    return jobs[job_id]
+
+
+@api.get("/jobs/{job_id}")
+def get_job(job_id: str):
+    if job_id not in jobs:
+        raise HTTPException(404, "job not found")
+    return jobs[job_id]
+
+
+@api.get("/analyses")
+def list_analyses(limit: int = Query(50, ge=1, le=500), ecosystem: str | None = None, package: str | None = None, verdict: str | None = None):
+    return store.list_analyses(limit=limit, ecosystem=ecosystem, package=package, verdict=verdict)
+
+
+@api.get("/analyses/{analysis_id}")
+def get_analysis(analysis_id: str):
+    doc = store.get_analysis(analysis_id)
+    if not doc:
+        raise HTTPException(404, "analysis not found")
+    return doc
+
+
+@api.get("/analyses/{analysis_id}/files/{file_id}")
+def file_detail(analysis_id: str, file_id: str):
+    payload = store.get_file_detail(analysis_id, file_id)
+    if payload is None:
+        raise HTTPException(404, "no detail stored for this file")
+    return payload
+
+
+@api.get("/ai/status")
+def ai_status():
+    return explainer.status()
+
+
+@api.get("/analyses/{analysis_id}/explain/preview")
+def explain_preview(analysis_id: str):
+    doc = get_analysis(analysis_id)
+    return explainer.build_payload(doc)
+
+
+@api.post("/analyses/{analysis_id}/explain")
+def explain(analysis_id: str):
+    doc = get_analysis(analysis_id)
+    result = explainer.explain(doc)
+    store.set_ai_explanation(analysis_id, result)
+    return result
+
+
+@api.get("/stats")
+def stats():
+    return store.stats()
+
+
+@api.get("/watchlist")
+def list_watch():
+    return store.list_watch()
+
+
+@api.post("/watchlist")
+def add_watch(req: WatchRequest):
+    try:
+        return watch.add(req.ecosystem, req.name, req.interval_minutes)
+    except AnalysisInputError as e:
+        raise HTTPException(404, str(e))
+    except ValueError as e:
+        raise HTTPException(409, str(e))
+
+
+@api.delete("/watchlist/{watch_id}")
+def remove_watch(watch_id: str):
+    store.delete_watch(watch_id)
+    return {"ok": True}
+
+
+@api.post("/watchlist/{watch_id}/check")
+def check_watch(watch_id: str):
+    if not store.get_watch(watch_id):
+        raise HTTPException(404, "watch item not found")
+    executor.submit(watch.check, watch_id)
+    return {"ok": True, "message": "Check started"}
+
+
+@api.post("/watchlist/{watch_id}/rewind")
+def rewind_watch(watch_id: str):
+    version = watch.rewind(watch_id)
+    if not version:
+        raise HTTPException(404, "nothing to rewind")
+    executor.submit(watch.check, watch_id)
+    return {"ok": True, "rediscovering": version}
+
+
+@api.get("/releases")
+def releases(ecosystem: str | None = None, name: str | None = None, limit: int = Query(200, ge=1, le=1000)):
+    return store.list_releases(ecosystem, name, limit)
+
+
+@api.get("/alerts")
+def alerts(limit: int = Query(100, ge=1, le=500), unread_only: bool = False):
+    return store.list_alerts(limit, unread_only)
+
+
+@api.post("/alerts/read-all")
+def read_all():
+    store.mark_all_alerts_read()
+    return {"ok": True}
+
+
+@api.post("/alerts/{alert_id}/read")
+def read_alert(alert_id: str):
+    store.mark_alert_read(alert_id)
+    return {"ok": True}
+
+
+app.include_router(api)
+app.add_middleware(CORSMiddleware, allow_credentials=True, allow_origins=os.environ.get("CORS_ORIGINS", "*").split(","),
+                   allow_methods=["*"], allow_headers=["*"])
+
 
 @app.on_event("startup")
-async def start_index_build():
-    app.state.index_task = asyncio.create_task(ensure_indexes())  # background: a big index build must not block boot
+def start_watch_loop():
+    threading.Thread(target=watch.run_forever, args=(stop_event, 60), daemon=True, name="pia-watch").start()
+
 
 @app.on_event("shutdown")
-async def shutdown_db_client():
-    app.state.index_task.cancel()  # stop a build still running before its client closes
-    with suppress(asyncio.CancelledError):
-        await app.state.index_task
-    client.close()
+def shutdown():
+    stop_event.set()
+    executor.shutdown(wait=False, cancel_futures=True)

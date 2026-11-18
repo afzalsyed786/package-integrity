@@ -1,0 +1,159 @@
+{
+  "project_name": "Package Integrity Analyzer (PIA)",
+  "app_type": "dashboard",
+  "archetype": "Swiss & High-Contrast Cyber Command Center with Tactile Anomaly Surfaces",
+  "theme": {
+    "default_mode": "dark",
+    "background": "Deep Navy Slate #070B14",
+    "surface": "#0D1424",
+    "surface_elevated": "#121D33",
+    "surface_glass": "rgba(13, 20, 36, 0.78)",
+    "border_subtle": "#1E2C47",
+    "border_active": "#2E436B"
+  },
+  "palette": {
+    "background_base": "#070B14",
+    "background_surface": "#0D1424",
+    "background_surface_elevated": "#121D33",
+    "foreground_primary": "#F4F7FC",
+    "foreground_muted": "#8EA0C0",
+    "foreground_dim": "#576B8E",
+    "brand_navy_accent": "#2563EB",
+    "brand_cyan_glow": "#38BDF8",
+    "verdict_clean": "#10B981",
+    "verdict_clean_bg": "rgba(16, 185, 129, 0.12)",
+    "verdict_clean_border": "rgba(16, 185, 129, 0.35)",
+    "verdict_suspicious_high": "#EF4444",
+    "verdict_suspicious_high_bg": "rgba(239, 68, 68, 0.12)",
+    "verdict_suspicious_high_border": "rgba(239, 68, 68, 0.4)",
+    "verdict_suspicious_medium": "#F97316",
+    "verdict_suspicious_medium_bg": "rgba(249, 115, 22, 0.12)",
+    "verdict_suspicious_medium_border": "rgba(249, 115, 22, 0.4)",
+    "verdict_inconclusive": "#EAB308",
+    "verdict_inconclusive_bg": "rgba(234, 179, 8, 0.12)",
+    "verdict_inconclusive_border": "rgba(234, 179, 8, 0.4)",
+    "eburnean_ivory": "#FDFBF7",
+    "eburnean_ivory_warm": "#F5EFE6",
+    "eburnean_badge_bg": "rgba(245, 239, 230, 0.12)",
+    "eburnean_badge_border": "rgba(245, 239, 230, 0.45)",
+    "diff_added_bg": "rgba(16, 185, 129, 0.15)",
+    "diff_added_text": "#34D399",
+    "diff_removed_bg": "rgba(239, 68, 68, 0.15)",
+    "diff_removed_text": "#F87171"
+  },
+  "typography": {
+    "heading_font": "Cabinet Grotesk, Manrope, -apple-system, BlinkMacSystemFont, sans-serif",
+    "body_font": "IBM Plex Sans, -apple-system, BlinkMacSystemFont, sans-serif",
+    "code_font": "JetBrains Mono, Menlo, Monaco, Consolas, monospace",
+    "scale": {
+      "h1": "text-3xl sm:text-4xl lg:text-5xl font-extrabold tracking-tight text-slate-100",
+      "h2": "text-2xl sm:text-3xl font-bold tracking-tight text-slate-100",
+      "h3": "text-xl sm:text-2xl font-semibold tracking-tight text-slate-200",
+      "h4": "text-lg sm:text-xl font-medium text-slate-200",
+      "body": "text-sm sm:text-base text-slate-300 leading-relaxed",
+      "label": "text-xs font-semibold uppercase tracking-[0.18em] text-slate-400",
+      "code": "font-mono text-xs sm:text-sm text-cyan-200"
+    }
+  },
+  "layout_and_navigation": {
+    "header": {
+      "style": "sticky top-0 z-50 backdrop-blur-xl bg-[#070B14]/85 border-b border-[#1E2C47]",
+      "components": [
+        "PIA Shield Icon + Brand Wordmark ('PIA // Package Integrity Analyzer')",
+        "Quick Live Target Selector (PyPI / npm)",
+        "System Status Badge (Pipeline: Operational • Verifier: v2.4)",
+        "Synthetic Tampered Samples Quick Drawer Trigger",
+        "Watchlist Status Pill (3 Active Monitors)"
+      ]
+    },
+    "sidebar_or_tabs": {
+      "tabs": [
+        {"id": "overview", "label": "Security Overview", "icon": "LayoutDashboard", "testid": "nav-tab-overview"},
+        {"id": "analyzer", "label": "Analyze Package", "icon": "ShieldAlert", "testid": "nav-tab-analyzer"},
+        {"id": "file-diff", "label": "File Comparison & Diff", "icon": "GitCompare", "testid": "nav-tab-file-diff"},
+        {"id": "findings", "label": "Anomalies & Evidence", "icon": "FileWarning", "testid": "nav-tab-findings"},
+        {"id": "ai-explain", "label": "AI Triage Explanation", "icon": "Sparkles", "testid": "nav-tab-ai-explain"},
+        {"id": "watchlist", "label": "Watchlist & Polling", "icon": "Eye", "testid": "nav-tab-watchlist"},
+        {"id": "history", "label": "Release History", "icon": "History", "testid": "nav-tab-history"},
+        {"id": "alerts", "label": "Alerts Feed", "icon": "BellRing", "testid": "nav-tab-alerts"},
+        {"id": "demo-samples", "label": "Synthetic Tampered Lab", "icon": "Beaker", "testid": "nav-tab-demo-samples"}
+      ]
+    },
+    "grid_structure": "Mode B High Density Grid: grid-cols-1 md:grid-cols-12 gap-6 p-6"
+  },
+  "components_and_visual_treatments": {
+    "verdict_card": {
+      "rule": "High-contrast hero badge with animated pulse ring. Use bold green for Clean, red for High Suspicion, burnt orange for Medium Suspicion, and warm amber for Inconclusive.",
+      "eburnean_role": "Ivory (#F5EFE6) highlight pill for 'ANOMALY DETECTED' & 'UNEXPECTED ARTIFACT' warnings to create bespoke military/tactical contrast against deep navy."
+    },
+    "file_diff_viewer": {
+      "type": "Side-by-Side Dual-Pane Code Diff",
+      "left_pane": "Published Package File (PyPI/npm Tarball)",
+      "right_pane": "Original GitHub Repository Source",
+      "style": "JetBrains Mono code, line numbers, line-by-line highlight (red deletions, green additions, yellow token changes), sticky diff headers with file hash and size deltas.",
+      "file_categories": [
+        "Package-Only (Ghost files injected into tarball)",
+        "Repo-Only (Omitted files e.g. tests, CI workflows)",
+        "Modified (Content hash mismatch)",
+        "Identical (Bit-for-bit clean match)",
+        "Expected-Generated (e.g. dist/ bundle, metadata PKG-INFO)"
+      ]
+    },
+    "ai_explanation_panel": {
+      "rule": "Clearly separated from deterministic verdicts. Marked with distinct 'AI Heuristic Summary' banner, confidence metric, AST-level behavior insight, and MITRE ATT&CK supply chain mapping (T1195.002)."
+    },
+    "synthetic_demo_lab": {
+      "samples": [
+        {
+          "name": "crypto-vault-core (npm)",
+          "version": "1.4.2",
+          "tamper_type": "Obfuscated Exfiltration in preinstall.js",
+          "verdict": "Suspicious",
+          "risk_score": 94,
+          "severity": "CRITICAL"
+        },
+        {
+          "name": "fast-schema-validator (PyPI)",
+          "version": "2.1.0",
+          "tamper_type": "Ghost File Injected in Wheel (.so / setup.py hook)",
+          "verdict": "Suspicious",
+          "risk_score": 88,
+          "severity": "HIGH"
+        },
+        {
+          "name": "auth-jwt-helper (npm)",
+          "version": "0.9.8",
+          "tamper_type": "Telemetry Backdoor in minified bundle vs TypeScript source",
+          "verdict": "Suspicious",
+          "risk_score": 82,
+          "severity": "HIGH"
+        },
+        {
+          "name": "requests-retry-toolkit (PyPI)",
+          "version": "3.0.1",
+          "tamper_type": "Clean Baseline Release",
+          "verdict": "Clean",
+          "risk_score": 4,
+          "severity": "NONE"
+        }
+      ]
+    }
+  },
+  "instructions_to_main_agent": [
+    "Build out the entire cybersecurity dashboard in React js with modern Tailwind CSS and Lucide icons.",
+    "Support PyPI and npm package analysis forms (ecosystem dropdown, package name input, version input, repository URL auto-detection or override).",
+    "Provide interactive Run Analysis with instant rich mock engine and support for custom queries.",
+    "Implement real working side-by-side diff viewer with file tree selector, category filters (Package-only, Repo-only, Modified, Identical, Expected-generated).",
+    "Implement the 'Synthetic Tampered Samples Lab' with 1-click 'Load & Inspect' into the analyzer and file diff viewer.",
+    "Use Recharts for Verdict Distribution (Donut / Pie), Risk Score History (AreaChart), Ecosystem breakdown (BarChart), and Anomaly Categories (Radial/Bar).",
+    "Implement Watchlist manager with active polling interval config (15m, 1h, 6h, 24h), release history drawer, and real-time security alerts feed.",
+    "Include an explicit 'AI Triage Explanation' panel toggleable per finding, displaying deterministic rules vs LLM heuristic assessment.",
+    "Every clickable or data element MUST have data-testid attributes (e.g. data-testid='run-analysis-btn', data-testid='file-category-package-only', data-testid='verdict-badge')."
+  ],
+  "UNIVERSAL_GUIDELINES_FOR_MAIN_AGENT": {
+    "anti_ai_slop": "Never use pure #000000 or generic full-screen saturated gradients. Use deep midnight navy #070B14 and rich surface #0D1424 with 1px border lines #1E2C47.",
+    "eburnean_accent": "Highlight critical security anomaly tags with Eburnean Ivory (#FDFBF7 / #F5EFE6) with subtle glow to make findings immediately eye-catching during live demonstration.",
+    "spacing": "Ensure cards have p-6 internal padding, generous gaps (gap-6 or gap-8), and clean scanability for live demo.",
+    "accessibility": "High-contrast text on all interactive and hover states. Monospace numbers for hashes, byte counts, and timestamps."
+  }
+}
