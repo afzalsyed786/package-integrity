@@ -21,6 +21,7 @@ from pia.config import get_settings  # noqa: E402
 from pia.database.mongo_store import MongoStore  # noqa: E402
 from pia.detectors import default_detectors  # noqa: E402
 from pia.engine.analyzer import Analyzer  # noqa: E402
+from pia.services.http import HttpError  # noqa: E402
 from pia.services.explanation import ExplanationService  # noqa: E402
 from pia.services.watch import WatchService  # noqa: E402
 
@@ -158,10 +159,14 @@ def add_watch(req: WatchRequest):
         raise HTTPException(404, str(e))
     except ValueError as e:
         raise HTTPException(409, str(e))
+    except HttpError as e:
+        raise HTTPException(502, f"registry unavailable: {e}")
 
 
 @api.delete("/watchlist/{watch_id}")
 def remove_watch(watch_id: str):
+    if not store.get_watch(watch_id):
+        raise HTTPException(404, "watch item not found")
     store.delete_watch(watch_id)
     return {"ok": True}
 

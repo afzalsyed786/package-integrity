@@ -1,4 +1,4 @@
-import useSWR from "swr";
+import useSWR, { mutate as globalMutate } from "swr";
 import { Link } from "react-router-dom";
 import { toast } from "sonner";
 import { CheckCheck, AlertTriangle, Info, Siren } from "lucide-react";
@@ -15,8 +15,8 @@ const SEV = {
 
 export default function Alerts() {
   const { data, mutate } = useSWR("/alerts?limit=200", fetcher, { refreshInterval: 5000 });
-  const readAll = async () => { await api.post("/alerts/read-all"); toast.success("All alerts marked read"); mutate(); };
-  const read = async (id) => { await api.post(`/alerts/${id}/read`); mutate(); };
+  const readAll = async () => { await api.post("/alerts/read-all"); toast.success("All alerts marked read"); mutate(); globalMutate("/stats"); };
+  const read = async (id) => { await api.post(`/alerts/${id}/read`); mutate(); globalMutate("/stats"); };
   return (
     <div>
       <PageHeader eyebrow="Watch mode output" title="Alerts" actions={

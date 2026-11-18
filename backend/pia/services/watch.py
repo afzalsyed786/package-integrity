@@ -26,13 +26,20 @@ class WatchService:
             raise AnalysisInputError("watch mode supports registry ecosystems only (pypi, npm)")
         return self.analyzer.adapters[ecosystem]
 
+    def _stable(self, ecosystem, name):
+        """Stable, non-yanked releases plus the registry's notion of 'latest'."""
+        adapter = self._adapter(ecosystem)
+        versions = [v for v in adapter.list_versions(name) if not v.get("prerelease") and not v.get("yanked")]
+        latest = adapter.latest_version(name) if hasattr(adapter, "latest_version") else None
+        return versions, latest or (versions[-1]["version"] if versions else None)
+
     def add(self, ecosystem: str, name: str, interval_minutes: int = 60) -> dict:
         ecosystem, name = ecosystem.lower().strip(), name.strip()
-        versions = self._adapter(ecosystem).list_versions(name)
+        versions, latest = self._stable(ecosystem, name)
         interval = max(5, min(int(interval_minutes), 1440))
         item = {"id": f"{ecosystem}:{name}", "ecosystem": ecosystem, "name": name, "interval_minutes": interval, "enabled": True,
                 "created_at": now_iso(), "last_checked": now_iso(), "next_check": (_now() + timedelta(minutes=interval)).isoformat(),
-                "last_error": None, "latest_version": versions[-1]["version"] if versions else None, "known_versions": len(versions),
+                "last_error": None, "latest_version": latest, "known_versions": len(versions),
                 "checks": 0, "new_releases": 0}
         if not self.store.add_watch(item):
             raise ValueError(f"{ecosystem}:{name} is already on the watchlist")
@@ -58,7 +65,7 @@ class WatchService:
             raise KeyError(watch_id)
         eco, name = item["ecosystem"], item["name"]
         try:
-            versions = self._adapter(eco).list_versions(name)
+            versions, latest = self._stable(eco, name)
         except Exception as e:
             backoff = min(item["interval_minutes"] * 2, 1440)
             self.store.update_watch(watch_id, {"last_error": str(e)[:300], "last_checked": now_iso(),
@@ -66,8 +73,6 @@ class WatchService:
             return {"error": str(e)}
         new = []
         for v in versions:
-            if v.get("yanked"):
-                continue
             if self.store.record_release({"ecosystem": eco, "name": name, "version": v["version"], "published_at": v["published_at"],
                                           "status": "discovered", "discovered_at": now_iso(), "prerelease": v.get("prerelease", False)}):
                 new.append(v)
@@ -81,7 +86,7 @@ class WatchService:
                 results.append(self._analyze(eco, name, v["version"]))
         self.store.update_watch(watch_id, {
             "last_checked": now_iso(), "next_check": (_now() + timedelta(minutes=item["interval_minutes"])).isoformat(), "last_error": None,
-            "latest_version": versions[-1]["version"] if versions else item.get("latest_version"), "known_versions": len(versions),
+            "latest_version": latest or item.get("latest_version"), "known_versions": len(versions),
             "checks": item.get("checks", 0) + 1, "new_releases": item.get("new_releases", 0) + len(new)})
         return {"new_versions": [v["version"] for v in new], "analyses": results}
 

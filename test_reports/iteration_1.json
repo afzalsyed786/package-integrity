@@ -1,0 +1,45 @@
+{
+  "summary": "First E2E run of PIA (FastAPI + React). Backend: 17/18 pytest cases pass (health, stats, samples, analyses list/detail/404, file detail, 3 synthetic jobs -> Suspicious, six 1.17.0 + ms 2.1.3 -> Clean, invalid package job -> failed with message, AI explain -> disabled + persisted, explain preview, watchlist add/409/check/rewind -> release analyzed + alerts, alerts read-all, delete). 1 failure: POST /api/watchlist with nonexistent package -> 500. Frontend: all requested flows work (overview stats/charts/rows nav, analyze form w/ progress -> detail, findings filters, open-file -> diff, file filters, expected-reason, AI disabled msg + payload preview, provenance + 2 rejected entries for left-trim, workspace pages w/ analysis switching, Demo Lab sample/real run+navigate, watchlist add/dup toast/check/rewind/remove, history releases table, alerts + read-all, failed-analysis toast). Found layout overflow bugs and watch-mode 'latest version' logic issue.",
+  "backend_issues": {
+    "critical": [
+      {"endpoint": "POST /api/watchlist", "issue": "Nonexistent package (e.g. pypi 'this-package-does-not-exist-xyz123') returns 500. RCA: WatchService.add -> adapter.list_versions -> http.get_json raises pia.services.http.NotFound which is not an AnalysisInputError, so server.add_watch's except clauses don't catch it. Fix: catch NotFound/HttpError in add_watch (-> 404) or convert to AnalysisInputError inside pypi/npm list_versions.", "priority": "HIGH"}
+    ],
+    "minor": [
+      {"endpoint": "POST /api/watchlist (npm)", "issue": "npm list_versions sorts by publish time, so latest_version for 'ms' = '4.0.0-nightly.202508271359' (prerelease) instead of dist-tags.latest 2.1.3. Rewind/'Demo: replay latest' therefore analyses a nightly with no tag -> Inconclusive (risk 12) instead of the expected Clean 2.1.3. Watch mode also queues prereleases for analysis. Suggest using dist-tags.latest for latest_version and skipping prereleases (configurable)."},
+      {"endpoint": "DELETE /api/watchlist/{id}", "issue": "Always returns 200 {ok:true} even for unknown id (no 404); releases for removed watch remain in DB."},
+      {"endpoint": "jobs (in-memory dict)", "issue": "jobs dict grows unbounded and is lost on restart; acceptable for MVP but consider TTL eviction."}
+    ]
+  },
+  "frontend_issues": {
+    "ui_bugs": [
+      {"component": "AIExplanation payload preview", "issue": "After clicking 'Preview data sent', the <pre> with long snippet lines stretches its card to ~2650px; document scrollWidth becomes 3055px at 1920 viewport (whole page scrolls horizontally, card extends off-screen). Add min-w-0 to the grid column / card and overflow-x-auto + max-w-full on the pre (or whitespace-pre-wrap break-all).", "selector": "[data-testid='ai-payload-preview']", "priority": "MEDIUM"},
+      {"component": "DiffViewer side-by-side", "issue": "For files with long lines (colorfmt-synth setup.py base64 line), the table is 2716px wide inside a 1014px container; the 'Repository source' column starts at x=2834 so users only see the package column unless they scroll horizontally - side-by-side comparison is effectively hidden. Use table-fixed with 50/50 columns and per-cell overflow/ellipsis or wrap.", "selector": "[data-testid='diff-viewer']", "priority": "MEDIUM"},
+      {"component": "Nav alert badge", "issue": "After 'Mark all read' on Alerts page, sidebar nav-alert-count keeps showing the old count until the 15s /stats refresh. readAll/read should also mutate('/stats').", "selector": "[data-testid='nav-alert-count']", "priority": "LOW"}
+    ],
+    "integration_issues": [],
+    "design_issues": [
+      {"screen": "Analysis detail", "issues": ["'File comparison (10)' tab count differs from 'All 11' filter count (filter includes repo_only files) - inconsistent numbers."]},
+      {"screen": "Overview risk chart", "issues": ["X-axis labels (pkg@version) are rotated and overlap/cramped with 15+ analyses; consider truncating or hiding ticks."]}
+    ]
+  },
+  "test_report_links": ["/app/backend/tests/test_pia_api.py", "/app/test_reports/pytest/pytest_results.xml"],
+  "action_items": [
+    "Catch http NotFound/HttpError in POST /api/watchlist (return 404 instead of 500)",
+    "npm watch: use dist-tags.latest for latest_version and skip prereleases so rewind replays a real stable release",
+    "Fix horizontal page overflow from AI payload preview <pre>",
+    "Make DiffViewer repository column visible for long lines (fixed 50/50 layout)",
+    "Refresh /stats SWR after alerts read/read-all so nav badge updates instantly"
+  ],
+  "critical_code_review_comments": [
+    "useAnalysisJob: api.get inside setInterval has no try/catch - a transient network error causes unhandled promise rejection and the interval keeps polling silently; add error handling/timeout.",
+    "server.py remove_watch returns ok for unknown ids; consider 404.",
+    "No endpoint to delete analyses, so test/demo runs accumulate permanently in the DB."
+  ],
+  "updated_files": ["/app/backend/tests/test_pia_api.py"],
+  "success_rate": {"backend": "94% (17/18)", "frontend": "95% (all flows functional; 2 medium layout bugs)"},
+  "seed_data_creation": "Analyses created via tests (synthetic x3+, six, ms 2.1.3, ms 4.0.0-nightly via watch) - no delete API exists so they remain. Watch item npm:ms was added and removed (twice); its release records and alerts remain (no delete API).",
+  "test_credentials": "None - app has no auth",
+  "retest_needed": true,
+  "should_main_agent_self_test": true,
+  "context_for_next_testing_agent": "Run: cd /app/backend && REACT_APP_BACKEND_URL=<frontend/.env value> python -m pytest tests/test_pia_api.py -v (pytest.ini uses xdist). test_watch_unknown_package currently fails (500). Watch IDs contain ':' - URL-encode. Fixed analysis ids: colorfmt 16e70520eee1, left-trim 651def66d166. Retest AI preview overflow (document.documentElement.scrollWidth should equal viewport) and diff viewer repo column visibility."
+}

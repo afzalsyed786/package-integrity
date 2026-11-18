@@ -61,6 +61,9 @@ class NpmAdapter(EcosystemAdapter):
                       "dependencies": d.get("dependencies") or {}, "has_install_script": d.get("hasInstallScript", False)},
         )
 
+    def latest_version(self, name):
+        return self._doc(name)["dist-tags"]["latest"]
+
     def list_versions(self, name):
         d = self._doc(name)
         times = d.get("time", {})

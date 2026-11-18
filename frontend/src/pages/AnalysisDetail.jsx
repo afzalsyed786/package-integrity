@@ -60,7 +60,7 @@ export const AnalysisBody = ({ id, defaultTab = "findings" }) => {
       <Tabs value={tab} onValueChange={setTab}>
         <TabsList className="h-auto flex-wrap bg-[#0D1424] p-1">
           <TabsTrigger value="findings" data-testid="tab-findings">Anomalies ({a.findings.length})</TabsTrigger>
-          <TabsTrigger value="files" data-testid="tab-files">File comparison ({a.files.length})</TabsTrigger>
+          <TabsTrigger value="files" data-testid="tab-files">File comparison ({a.files.length + (a.repo_only?.length || 0)})</TabsTrigger>
           <TabsTrigger value="ai" data-testid="tab-ai">AI explanation</TabsTrigger>
           <TabsTrigger value="provenance" data-testid="tab-provenance">Provenance</TabsTrigger>
         </TabsList>

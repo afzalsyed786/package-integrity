@@ -28,8 +28,8 @@ export default function AIExplanation({ analysis, onUpdated }) {
   };
 
   return (
-    <div className="grid gap-6 lg:grid-cols-[1fr_380px]">
-      <div className="pia-card p-6">
+    <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_380px]">
+      <div className="pia-card min-w-0 p-6">
         <div className="mb-5 flex flex-wrap items-center gap-3 rounded-lg border border-violet-400/25 bg-violet-400/5 px-4 py-3 text-xs text-violet-200">
           <Sparkles className="h-4 w-4" />
           AI heuristic summary — explains findings only. Final verdict (deterministic):
@@ -53,7 +53,7 @@ export default function AIExplanation({ analysis, onUpdated }) {
           </Button>
         </div>
         {preview && (
-          <pre data-testid="ai-payload-preview" className="scroll-thin mt-5 max-h-96 overflow-auto rounded-lg border border-[#1E2C47] bg-[#070B14] p-4 font-mono text-xs text-slate-300">{JSON.stringify(preview, null, 2)}</pre>
+          <pre data-testid="ai-payload-preview" className="scroll-thin mt-5 max-h-96 max-w-full overflow-auto whitespace-pre-wrap break-all rounded-lg border border-[#1E2C47] bg-[#070B14] p-4 font-mono text-xs text-slate-300">{JSON.stringify(preview, null, 2)}</pre>
         )}
       </div>
       <div className="pia-card space-y-4 p-6 text-sm">

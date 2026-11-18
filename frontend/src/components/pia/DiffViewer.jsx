@@ -11,7 +11,7 @@ const ROW_BG = {
 const Cell = ({ n, text, bg, flagged }) => (
   <>
     <td className={`w-12 select-none border-r border-[#1E2C47] px-2 text-right align-top text-slate-600 ${flagged ? "bg-[#F5EFE6]/15 text-[#FDFBF7]" : ""}`}>{n ?? ""}</td>
-    <td className="whitespace-pre px-3 align-top" style={{ background: bg }}>{text}</td>
+    <td className="whitespace-pre-wrap break-all px-3 align-top" style={{ background: bg }}>{text}</td>
   </>
 );
 
@@ -26,18 +26,23 @@ export default function DiffViewer({ analysisId, file, flaggedLines = [] }) {
   const flagged = new Set(flaggedLines);
   return (
     <div data-testid="diff-viewer" className="scroll-thin max-h-[620px] overflow-auto">
-      <table className="w-full border-collapse font-mono text-[12px] leading-[1.65]">
+      <table className="w-full table-fixed border-collapse font-mono text-[12px] leading-[1.65]">
+        {data.mode === "diff" ? (
+          <colgroup><col className="w-12" /><col /><col className="w-px" /><col className="w-12" /><col /></colgroup>
+        ) : (
+          <colgroup><col className="w-12" /><col /></colgroup>
+        )}
         <thead className="sticky top-0 z-10 bg-[#121D33] text-left text-[10px] uppercase tracking-[0.16em] text-slate-400">
           <tr>
-            <th colSpan={2} className="border-b border-[#1E2C47] px-3 py-2">Published package · {file.path}</th>
-            {data.mode === "diff" && <th colSpan={2} className="border-b border-l border-[#1E2C47] px-3 py-2">Repository source · {file.repo_path}</th>}
+            <th colSpan={2} className="truncate border-b border-[#1E2C47] px-3 py-2">Published package · {file.path}</th>
+            {data.mode === "diff" && <th colSpan={3} className="truncate border-b border-l border-[#1E2C47] px-3 py-2">Repository source · {file.repo_path}</th>}
           </tr>
         </thead>
         <tbody className="text-slate-300">
           {data.mode === "diff"
             ? data.rows.map((r, i) =>
                 r[0] === "skip" ? (
-                  <tr key={i}><td colSpan={4} className="bg-[#0A1120] px-3 py-1 text-center text-[11px] text-slate-500">{r[2]}</td></tr>
+                  <tr key={i}><td colSpan={5} className="bg-[#0A1120] px-3 py-1 text-center text-[11px] text-slate-500">{r[2]}</td></tr>
                 ) : (
                   <tr key={i}>
                     <Cell n={r[1]} text={r[2]} bg={(ROW_BG[r[0]] || [])[0]} flagged={flagged.has(r[1])} />

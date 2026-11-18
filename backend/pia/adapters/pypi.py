@@ -69,7 +69,10 @@ class PyPIAdapter(EcosystemAdapter):
 
     def list_versions(self, name) -> list[dict]:
         self._check(name)
-        data = self.http.get_json(f"{self.base}/{name}/json", ttl=120)
+        try:
+            data = self.http.get_json(f"{self.base}/{name}/json", ttl=120)
+        except NotFound as e:
+            raise AnalysisInputError(f"PyPI package {name!r} not found") from e
         out = []
         for v, files in data.get("releases", {}).items():
             if not files:

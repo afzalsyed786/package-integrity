@@ -16,7 +16,15 @@ export function useAnalysisJob() {
       const { data } = await api.post("/analyses", body);
       setJob(data);
       timer.current = setInterval(async () => {
-        const { data: j } = await api.get(`/jobs/${data.id}`);
+        let j;
+        try {
+          ({ data: j } = await api.get(`/jobs/${data.id}`));
+        } catch (e) {
+          clearInterval(timer.current);
+          setJob(null);
+          toast.error(`Lost track of analysis: ${errMsg(e)}`);
+          return;
+        }
         setJob(j);
         if (j.status === "completed") {
           clearInterval(timer.current);
