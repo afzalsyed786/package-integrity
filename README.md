@@ -41,3 +41,16 @@ Department of Artificial Intelligence & Industrial Automation
 ## How this was built
 
 This project was built with help from the Emergent AI agent and reviewed and improved by the team through pull requests.
+
+## Package Integrity Workflow
+
+PIA provides a workflow for inspecting package integrity:
+
+1. Select the package ecosystem.
+2. Enter the package name and version.
+3. Run the package integrity analysis.
+4. Review the comparison results.
+5. Inspect anomalies and supporting evidence.
+6. Review the analysis verdict and risk score.
+
+The platform also provides package monitoring through its Watchlist, Release History, and Alerts sections.
